@@ -1,0 +1,17 @@
+{
+  "name": "fighting-game",
+  "version": "1.0.0",
+  "description": "RING OF FURY — Three.js製の3D対戦格闘ゲーム",
+  "scripts": {
+    "start": "npx serve .",
+    "test": "node test/smoke.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://local_proxy@127.0.0.1:38947/git/jinyasu/fighting-game"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "three": "^0.160.0"
+  }
+}

@@ -1,6 +1,6 @@
 // キーボード入力管理
-// P1: WASD移動(W=ジャンプ, S=しゃがみ), Q/E=サイドステップ, F=パンチ, G=キック, H=必殺技, Space=ガード
-// P2: 矢印キー移動, ,/.=サイドステップ, K=パンチ, L=キック, O=必殺技, M=ガード
+// P1: WASD移動(W=ジャンプ, S=しゃがみ), Q/E=サイドステップ, F=パンチ, G=キック, H=必殺技, T=投げ, Space=ガード
+// P2: 矢印キー移動, ,/.=サイドステップ, K=パンチ, L=キック, O=必殺技, I=投げ, M=ガード
 
 export class InputManager {
   constructor() {
@@ -41,6 +41,7 @@ export class InputManager {
         punch: this.wasPressed('KeyF'),
         kick: this.wasPressed('KeyG'),
         special: this.wasPressed('KeyH'),
+        throw: this.wasPressed('KeyT'),
         guard: this.isDown('Space'),
       };
     } else {
@@ -55,6 +56,7 @@ export class InputManager {
         punch: this.wasPressed('KeyK'),
         kick: this.wasPressed('KeyL'),
         special: this.wasPressed('KeyO'),
+        throw: this.wasPressed('KeyI'),
         guard: this.isDown('KeyM'),
       };
     }

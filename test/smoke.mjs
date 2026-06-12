@@ -160,5 +160,169 @@ console.log('8. ジャンプ');
   f1.dispose(); f2.dispose();
 }
 
+// 9. 勝利ポーズ中のupdateが例外を出さない(ラウンド進行バグの回帰テスト)
+console.log('9. 勝利ポーズ(回帰)');
+{
+  const f1 = new Fighter(CHARACTERS[0], scene);
+  const f2 = new Fighter(CHARACTERS[1], scene);
+  f1.reset(-2, 0); f2.reset(2, 0);
+  f2.hp = 1;
+  f2.ko();
+  f1.win();
+  let ok = true;
+  try {
+    for (let i = 0; i < 200; i++) {
+      f1.update(0.016, null, f2);
+      f2.update(0.016, null, f1);
+    }
+  } catch (e) {
+    ok = false;
+    console.error('   例外:', e.message);
+  }
+  check('win/ko状態のupdateが例外を出さない', ok);
+  check('win状態が維持される', f1.state === 'win');
+  f1.dispose(); f2.dispose();
+}
+
+// 10. コンボ(パンチ→パンチで2段目につながる)
+console.log('10. コンボ');
+{
+  const f1 = new Fighter(CHARACTERS[0], scene);
+  const f2 = new Fighter(CHARACTERS[1], scene);
+  f1.reset(-0.6, 0); f2.reset(0.6, 0);
+  const hp0 = f2.hp;
+  let sawPunch2 = false;
+  f1.update(0.016, { punch: true }, f2);
+  for (let i = 0; i < 60; i++) {
+    // 攻撃中に追加入力してコンボへ派生
+    const inp = i === 6 ? { punch: true } : {};
+    f1.update(0.016, inp, f2);
+    f2.update(0.016, {}, f1);
+    if (f1.actionName === 'punch2') sawPunch2 = true;
+  }
+  check('2段目(ストレート)に派生する', sawPunch2);
+  check('2発分のダメージが入る', hp0 - f2.hp >= 14);
+  f1.dispose(); f2.dispose();
+}
+
+// 11. 下段とガードの三すくみ
+console.log('11. 下段 vs ガード');
+{
+  const f1 = new Fighter(CHARACTERS[0], scene);
+  const f2 = new Fighter(CHARACTERS[1], scene);
+  // 足払い(下段) vs 立ちガード → ヒットしてダウン
+  f1.reset(-0.6, 0); f2.reset(0.6, 0);
+  let hp0 = f2.hp;
+  f2.update(0.016, { guard: true }, f1);
+  f1.update(0.016, { crouch: true, kick: true }, f2);
+  let sawDown = false;
+  for (let i = 0; i < 60; i++) {
+    f1.update(0.016, { crouch: true }, f2);
+    f2.update(0.016, { guard: true }, f1);
+    if (f2.state === 'down') sawDown = true;
+  }
+  check('足払いは立ちガードを崩す', f2.hp < hp0 && sawDown);
+
+  // 足払い(下段) vs しゃがみガード → ガードされる
+  const f3 = new Fighter(CHARACTERS[0], scene);
+  const f4 = new Fighter(CHARACTERS[1], scene);
+  f3.reset(-0.6, 0); f4.reset(0.6, 0);
+  f4.update(0.016, { guard: true, crouch: true }, f3);
+  hp0 = f4.hp;
+  f3.update(0.016, { crouch: true, kick: true }, f4);
+  for (let i = 0; i < 60; i++) {
+    f3.update(0.016, { crouch: true }, f4);
+    f4.update(0.016, { guard: true, crouch: true }, f3);
+  }
+  check('足払いはしゃがみガードで防げる', f4.hp === hp0);
+
+  // キック(中段) vs しゃがみガード → ヒット
+  const f5 = new Fighter(CHARACTERS[0], scene);
+  const f6 = new Fighter(CHARACTERS[1], scene);
+  f5.reset(-0.6, 0); f6.reset(0.6, 0);
+  f6.update(0.016, { guard: true, crouch: true }, f5);
+  hp0 = f6.hp;
+  f5.update(0.016, { kick: true }, f6);
+  for (let i = 0; i < 60; i++) {
+    f5.update(0.016, {}, f6);
+    f6.update(0.016, { guard: true, crouch: true }, f5);
+  }
+  check('中段キックはしゃがみガードを崩す', f6.hp < hp0);
+  f1.dispose(); f2.dispose(); f3.dispose(); f4.dispose(); f5.dispose(); f6.dispose();
+}
+
+// 12. 投げ
+console.log('12. 投げ');
+{
+  const f1 = new Fighter(CHARACTERS[0], scene);
+  const f2 = new Fighter(CHARACTERS[1], scene);
+  // 立ちガード相手に投げが通る
+  f1.reset(-0.5, 0); f2.reset(0.5, 0);
+  f2.update(0.016, { guard: true }, f1);
+  let hp0 = f2.hp;
+  f1.update(0.016, { throw: true }, f2);
+  let sawDown = false;
+  for (let i = 0; i < 80; i++) {
+    f1.update(0.016, {}, f2);
+    f2.update(0.016, { guard: true }, f1);
+    if (f2.state === 'down') sawDown = true;
+  }
+  check('投げはガードを無視してダウンを奪う', f2.hp < hp0 && sawDown);
+
+  // しゃがみ相手には投げが空振る
+  const f3 = new Fighter(CHARACTERS[0], scene);
+  const f4 = new Fighter(CHARACTERS[1], scene);
+  f3.reset(-0.5, 0); f4.reset(0.5, 0);
+  f4.update(0.016, { crouch: true }, f3);
+  hp0 = f4.hp;
+  f3.update(0.016, { throw: true }, f4);
+  for (let i = 0; i < 80; i++) {
+    f3.update(0.016, {}, f4);
+    f4.update(0.016, { crouch: true }, f3);
+  }
+  check('しゃがみには投げが空振る', f4.hp === hp0);
+  f1.dispose(); f2.dispose(); f3.dispose(); f4.dispose();
+}
+
+// 13. ダウン→無敵→起き上がり
+console.log('13. ダウンと起き上がり');
+{
+  const f1 = new Fighter(CHARACTERS[0], scene);
+  const f2 = new Fighter(CHARACTERS[1], scene);
+  f1.reset(-0.5, 0); f2.reset(0.5, 0);
+  f2.knockdown();
+  const hp0 = f2.hp;
+  // ダウン中は攻撃が当たらない
+  f1.update(0.016, { punch: true }, f2);
+  for (let i = 0; i < 30; i++) {
+    f1.update(0.016, {}, f2);
+    f2.update(0.016, {}, f1);
+  }
+  check('ダウン中は無敵', f2.hp === hp0);
+  // 時間経過で起き上がって自由になる
+  for (let i = 0; i < 150; i++) f2.update(0.016, {}, f1);
+  check('起き上がってfreeに戻る', f2.state === 'free');
+  f1.dispose(); f2.dispose();
+}
+
+// 14. 空中攻撃
+console.log('14. 空中攻撃');
+{
+  const f1 = new Fighter(CHARACTERS[0], scene);
+  const f2 = new Fighter(CHARACTERS[1], scene);
+  f1.reset(-0.7, 0); f2.reset(0.7, 0);
+  const hp0 = f2.hp;
+  f1.update(0.016, { jump: true }, f2);
+  for (let i = 0; i < 8; i++) f1.update(0.016, {}, f2);
+  f1.update(0.016, { kick: true }, f2);
+  check('空中でキックが出る', f1.actionName === 'airKick');
+  for (let i = 0; i < 60; i++) {
+    f1.update(0.016, {}, f2);
+    f2.update(0.016, {}, f1);
+  }
+  check('ジャンプキックが当たる', f2.hp < hp0);
+  f1.dispose(); f2.dispose();
+}
+
 console.log(failures === 0 ? '\n全テスト成功' : `\n${failures}件失敗`);
 process.exit(failures === 0 ? 0 : 1);

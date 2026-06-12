@@ -15,6 +15,7 @@ export const CHARACTERS = [
     stats: { hp: 100, speed: 1.0, power: 1.0, reach: 1.0 },
     accessory: 'headband',
     accessoryColor: 0xcc2222,
+    outfit: 'gi',
     special: { name: '轟雷正拳', anim: 'lungePunch', damage: 22, desc: '踏み込み正拳突き' },
   },
   {
@@ -28,6 +29,7 @@ export const CHARACTERS = [
     stats: { hp: 90, speed: 1.2, power: 0.9, reach: 0.92 },
     accessory: 'bun',
     accessoryColor: 0x140f0a,
+    outfit: 'gi',
     special: { name: '崩山靠', anim: 'shoulderBash', damage: 20, desc: '鉄山靠の如き体当たり' },
   },
   {
@@ -41,6 +43,7 @@ export const CHARACTERS = [
     stats: { hp: 125, speed: 0.75, power: 1.3, reach: 1.05 },
     accessory: 'beard',
     accessoryColor: 0xb09a60,
+    outfit: 'tank',
     special: { name: 'シベリアンハンマー', anim: 'overheadSmash', damage: 28, desc: '両腕の振り下ろし' },
   },
   {
@@ -54,6 +57,7 @@ export const CHARACTERS = [
     stats: { hp: 92, speed: 1.18, power: 0.95, reach: 1.02 },
     accessory: 'longhair',
     accessoryColor: 0x2b1b10,
+    outfit: 'tank',
     special: { name: 'メイア・ルーア', anim: 'spinKick', damage: 21, desc: '回転大車輪蹴り' },
   },
   {
@@ -67,6 +71,7 @@ export const CHARACTERS = [
     stats: { hp: 110, speed: 1.0, power: 1.15, reach: 0.95 },
     accessory: 'cap',
     accessoryColor: 0xe74c3c,
+    outfit: 'shirtless',
     special: { name: 'メガトンスマッシュ', anim: 'lungePunch', damage: 25, desc: '渾身のダッシュストレート' },
   },
   {
@@ -80,6 +85,7 @@ export const CHARACTERS = [
     stats: { hp: 82, speed: 1.35, power: 0.85, reach: 0.95 },
     accessory: 'mask',
     accessoryColor: 0x9b59b6,
+    outfit: 'gi',
     special: { name: '疾風斬', anim: 'dashStrike', damage: 18, desc: '神速の突進斬' },
   },
   {
@@ -93,6 +99,7 @@ export const CHARACTERS = [
     stats: { hp: 112, speed: 0.95, power: 1.18, reach: 0.98 },
     accessory: 'luchamask',
     accessoryColor: 0x16a085,
+    outfit: 'shirtless',
     special: { name: 'フライングクロスチョップ', anim: 'flyingStrike', damage: 24, desc: '跳躍チョップ' },
   },
   {
@@ -106,6 +113,7 @@ export const CHARACTERS = [
     stats: { hp: 100, speed: 1.05, power: 1.08, reach: 1.0 },
     accessory: 'headband',
     accessoryColor: 0xf1c40f,
+    outfit: 'shirtless',
     special: { name: '飛膝蹴り', anim: 'flyingStrike', damage: 23, desc: 'カオローイ（飛び膝）' },
   },
   {
@@ -119,6 +127,7 @@ export const CHARACTERS = [
     stats: { hp: 90, speed: 1.15, power: 0.95, reach: 1.1 },
     accessory: 'ponytail',
     accessoryColor: 0x241a14,
+    outfit: 'gi',
     special: { name: '旋風三連脚', anim: 'spinKick', damage: 22, desc: '回転三連蹴り' },
   },
   {
@@ -132,6 +141,7 @@ export const CHARACTERS = [
     stats: { hp: 96, speed: 1.0, power: 1.0, reach: 1.18 },
     accessory: 'topknot',
     accessoryColor: 0x0a0a0a,
+    outfit: 'shirtless',
     special: { name: 'ヴァジュラ突き', anim: 'dashStrike', damage: 21, desc: '雷霆の貫手' },
   },
   {
@@ -145,6 +155,7 @@ export const CHARACTERS = [
     stats: { hp: 105, speed: 1.0, power: 1.1, reach: 1.0 },
     accessory: 'mohawk',
     accessoryColor: 0x6d4c2f,
+    outfit: 'tank',
     special: { name: 'スーパーマンパンチ', anim: 'flyingStrike', damage: 24, desc: '跳び込み拳' },
   },
   {
@@ -158,6 +169,7 @@ export const CHARACTERS = [
     stats: { hp: 88, speed: 1.22, power: 0.92, reach: 1.05 },
     accessory: 'shorthair',
     accessoryColor: 0x0c0c0c,
+    outfit: 'tank',
     special: { name: 'フェッテ・トルネード', anim: 'spinKick', damage: 21, desc: '竜巻回し蹴り' },
   },
 ];

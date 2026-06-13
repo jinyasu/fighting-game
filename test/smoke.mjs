@@ -324,5 +324,66 @@ console.log('14. 空中攻撃');
   f1.dispose(); f2.dispose();
 }
 
+// 15. BGM(WebAudioをスタブして合成ロジックを検証)
+console.log('15. BGM');
+{
+  // 最小限のWebAudioスタブ。生成されたノード数を数える
+  let started = 0;
+  const param = () => ({
+    value: 0,
+    setValueAtTime() { return this; },
+    linearRampToValueAtTime() { return this; },
+    exponentialRampToValueAtTime() { return this; },
+    cancelScheduledValues() { return this; },
+  });
+  const node = () => ({
+    frequency: param(), gain: param(), Q: param(), type: '', threshold: param(), ratio: param(),
+    connect(x) { return x; }, start() { started++; }, stop() {},
+  });
+  class FakeCtx {
+    constructor() { this.currentTime = 0; this.sampleRate = 44100; this.state = 'running'; this.destination = node(); }
+    createGain() { return node(); }
+    createOscillator() { return node(); }
+    createBiquadFilter() { return node(); }
+    createDynamicsCompressor() { return node(); }
+    createBufferSource() { return node(); }
+    createBuffer() { return { getChannelData: () => new Float32Array(64) }; }
+    resume() {}
+  }
+  global.window = { AudioContext: FakeCtx };
+  const { SoundManager } = await import('../src/audio.js');
+  const sm = new SoundManager();
+
+  sm.startBgm('fight');
+  check('BGM開始でスケジューラが起動する', !!sm.bgm && sm.bgm.track === 'fight');
+  // 4小節分の時間を進めて手動でスケジューラを回す
+  for (let i = 0; i < 400; i++) { sm.ctx.currentTime += 0.02; sm._scheduler(); }
+  check('fightトラックでノートが鳴った', started > 0);
+
+  const before = started;
+  sm.startBgm('fight');
+  check('同じトラックの再呼び出しでリセットされない', sm.bgm.step > 0);
+
+  sm.startBgm('title');
+  check('別トラックへ切り替わる', sm.bgm.track === 'title');
+  for (let i = 0; i < 200; i++) { sm.ctx.currentTime += 0.02; sm._scheduler(); }
+  check('titleトラックでもノートが鳴る', started > before);
+
+  const muted = sm.toggleBgmMute();
+  check('ミュート切り替えが効く', muted === true && sm.toggleBgmMute() === false);
+
+  sm.stopBgm();
+  check('BGM停止でnullになる', sm.bgm === null);
+
+  // 各トラック定義の健全性(lead長16・prog非空)を間接確認: 例外なくvictoryも回る
+  sm.startBgm('victory');
+  let ok = true;
+  try { for (let i = 0; i < 100; i++) { sm.ctx.currentTime += 0.02; sm._scheduler(); } }
+  catch (e) { ok = false; }
+  check('victoryトラックが例外なく再生される', ok);
+  sm.stopBgm();
+  delete global.window;
+}
+
 console.log(failures === 0 ? '\n全テスト成功' : `\n${failures}件失敗`);
 process.exit(failures === 0 ? 0 : 1);

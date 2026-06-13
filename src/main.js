@@ -69,6 +69,7 @@ class Game {
     this.clearPreviews();
     this.clearFighters();
     this.renderTitleMenu();
+    this.sound.startBgm('title');
   }
 
   renderTitleMenu() {
@@ -98,6 +99,7 @@ class Game {
     $('hud').classList.add('hidden');
     $('result-screen').classList.add('hidden');
     this.clearFighters();
+    this.sound.startBgm('title');
     this.selCursor = [0, 1];
     this.selDone = [false, false];
     this.selPhase = 0; // 0=P1選択中, 1=P2/CPU選択中
@@ -215,6 +217,7 @@ class Game {
     $('p2-name').textContent = (this.mode === 'cpu' ? 'CPU ' : '') + `${def2.name}（${def2.style}）`;
 
     this.state = 'fight';
+    this.sound.startBgm('fight');
     this.startRound();
   }
 
@@ -327,6 +330,16 @@ class Game {
     requestAnimationFrame(() => this.loop());
     const dt = Math.min(this.clock.getDelta(), 0.05);
 
+    // BGMミュート切り替え(どの画面でも有効)
+    if (this.input.wasPressed('KeyB')) {
+      const muted = this.sound.toggleBgmMute();
+      const el = $('bgm-indicator');
+      if (el) { el.textContent = muted ? '♪ BGM OFF' : '♪ BGM ON'; el.style.opacity = '1';
+        clearTimeout(this._bgmIndTimer);
+        this._bgmIndTimer = setTimeout(() => { el.style.opacity = '0'; }, 1400);
+      }
+    }
+
     if (this.state === 'title') this.updateTitle();
     else if (this.state === 'select') this.updateSelect(dt);
     else if (this.state === 'fight') this.updateFight(dt);
@@ -412,11 +425,13 @@ class Game {
     if (this.input.wasPressed('Escape')) {
       this.paused = !this.paused;
       $('pause-overlay').classList.toggle('hidden', !this.paused);
+      this.sound.duckBgm(this.paused);
     }
     if (this.paused) {
       if (this.input.wasPressed('KeyQ') && this.paused) {
         this.paused = false;
         $('pause-overlay').classList.add('hidden');
+        this.sound.duckBgm(false);
         this.showTitle();
       }
       return;
@@ -520,6 +535,7 @@ class Game {
       <div class="result-hint">Enter: もう一度 / Escape: タイトルへ</div>`;
     $('result-screen').classList.remove('hidden');
     $('controls-help').classList.add('hidden');
+    this.sound.startBgm('victory');
   }
 
   updateResult() {

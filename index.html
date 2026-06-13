@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RING OF FURY — 3D格闘ゲーム</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+  body { font-family: 'Hiragino Kaku Gothic ProN', 'Yu Gothic', Meiryo, sans-serif; color: #fff; }
+  #game-canvas { display: block; width: 100%; height: 100%; }
+  .hidden { display: none !important; }
+
+  .overlay {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  .overlay > * { pointer-events: auto; }
+
+  /* ---- タイトル ---- */
+  #title-screen { background: radial-gradient(ellipse at center, rgba(10,15,40,0.25), rgba(0,0,5,0.7)); }
+  .game-logo {
+    font-size: clamp(40px, 9vw, 96px);
+    font-weight: 900; font-style: italic;
+    letter-spacing: 0.04em;
+    background: linear-gradient(180deg, #ffe14d 20%, #ff8c00 55%, #b33000 90%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 4px 0 #401000) drop-shadow(0 8px 18px rgba(255,120,0,0.45));
+    text-align: center; line-height: 1.0;
+  }
+  .game-logo-sub {
+    font-size: clamp(14px, 2.2vw, 22px);
+    letter-spacing: 0.6em; color: #9fb4ff; margin-top: 10px;
+    text-shadow: 0 0 12px rgba(110,140,255,0.8);
+  }
+  #title-menu { margin-top: 48px; text-align: center; }
+  .menu-item {
+    font-size: clamp(16px, 2.4vw, 24px); padding: 8px 28px; margin: 4px;
+    color: #aab; cursor: pointer; transition: all 0.12s;
+  }
+  .menu-item.active { color: #ffe14d; text-shadow: 0 0 14px rgba(255,200,40,0.8); transform: scale(1.08); }
+  .title-hint { margin-top: 36px; color: #778; font-size: 13px; }
+
+  /* ---- キャラセレクト ---- */
+  #select-screen { justify-content: flex-start; padding-top: 4vh; background: linear-gradient(180deg, rgba(0,0,10,0.55), rgba(0,0,10,0.2) 40%, rgba(0,0,10,0.75)); }
+  .select-title {
+    font-size: clamp(22px, 4vw, 40px); font-weight: 900; font-style: italic;
+    color: #ffe14d; text-shadow: 0 3px 0 #503000, 0 0 18px rgba(255,180,0,0.5);
+    margin-bottom: 2vh;
+  }
+  #char-grid {
+    display: grid; grid-template-columns: repeat(6, minmax(86px, 120px));
+    gap: 10px; padding: 0 16px;
+  }
+  .char-cell {
+    background: rgba(20,26,52,0.92); border: 2px solid #38406e; border-radius: 6px;
+    padding: 8px 6px 6px; text-align: center; cursor: pointer;
+    transition: transform 0.1s;
+  }
+  .char-cell:hover { transform: scale(1.05); }
+  .char-swatch { width: 100%; height: 44px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.25); }
+  .char-name { font-size: 12px; font-weight: 700; margin-top: 6px; letter-spacing: 0.04em; }
+  .char-cell.p1-cursor { border-color: #ff4d4d; box-shadow: 0 0 14px rgba(255,70,70,0.8); }
+  .char-cell.p2-cursor { border-color: #4da6ff; box-shadow: 0 0 14px rgba(70,150,255,0.8); }
+  .char-cell.p1-cursor.p2-cursor { border-color: #d24dff; box-shadow: 0 0 14px rgba(200,80,255,0.9); }
+
+  #select-info { display: flex; justify-content: space-between; width: min(92vw, 980px); margin-top: 2.5vh; gap: 20px; }
+  .select-panel {
+    flex: 1; background: rgba(10,14,34,0.85); border-radius: 8px; padding: 14px 18px;
+    border: 1px solid #38406e; min-height: 120px; font-size: 14px; line-height: 1.65;
+  }
+  #select-info-p1 { border-left: 4px solid #ff4d4d; }
+  #select-info-p2 { border-right: 4px solid #4da6ff; text-align: right; }
+  .sel-player { font-size: 12px; color: #8892c8; font-weight: 700; }
+  .sel-name { font-size: 22px; font-weight: 900; color: #ffe14d; }
+  .sel-ja { font-size: 14px; color: #ccd; font-weight: 400; }
+  .sel-style { color: #aab4e8; }
+  .sel-special { color: #ff9e4d; font-size: 13px; }
+  .sel-stats { font-size: 12px; color: #ccd; }
+  .stat-bar { color: #ffd24d; letter-spacing: 1px; }
+  .stat-dim { color: #333a5e; }
+  .select-hint { margin-top: 2vh; color: #778; font-size: 13px; text-align: center; }
+
+  /* ---- HUD ---- */
+  #hud { position: absolute; top: 0; left: 0; right: 0; padding: 14px 20px; pointer-events: none; }
+  .hud-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+  .hud-side { flex: 1; }
+  .hud-name { font-size: 14px; font-weight: 800; text-shadow: 0 2px 3px #000; margin-bottom: 4px; }
+  #p2-side .hud-name { text-align: right; }
+  .health-outer {
+    height: 22px; background: rgba(20,0,0,0.75); border: 2px solid #fff;
+    border-radius: 4px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+  }
+  .health-inner { height: 100%; width: 100%; transition: width 0.15s ease-out; background: linear-gradient(#ffe14d,#f3a712); }
+  #p2-side .health-outer { direction: rtl; }
+  .pips { margin-top: 5px; display: flex; gap: 6px; }
+  #p2-side .pips { justify-content: flex-end; }
+  .pip {
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid #ffe14d; background: transparent; display: inline-block;
+  }
+  .pip.won { background: #ffe14d; box-shadow: 0 0 8px rgba(255,220,60,0.9); }
+  #timer-box {
+    min-width: 90px; text-align: center;
+    font-size: 40px; font-weight: 900; font-style: italic;
+    color: #ffe14d; text-shadow: 0 3px 0 #503000, 0 0 14px rgba(255,170,0,0.6);
+  }
+
+  /* ---- 中央メッセージ ---- */
+  #center-message {
+    position: absolute; top: 34%; left: 0; right: 0;
+    text-align: center; font-size: clamp(36px, 8vw, 88px);
+    font-weight: 900; font-style: italic; white-space: pre-line; line-height: 1.15;
+    color: #fff;
+    text-shadow: 0 4px 0 #802000, 0 0 30px rgba(255,120,0,0.8), 0 0 60px rgba(255,60,0,0.5);
+    opacity: 0; transition: opacity 0.4s; pointer-events: none;
+  }
+  #center-message.pop { animation: msgpop 0.35s ease-out; }
+  @keyframes msgpop {
+    0% { transform: scale(2.2); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  /* ---- リザルト ---- */
+  #result-screen { background: rgba(0,0,10,0.45); }
+  .result-win {
+    font-size: clamp(40px, 8vw, 84px); font-weight: 900; font-style: italic;
+    color: #ffe14d; text-shadow: 0 4px 0 #503000, 0 0 30px rgba(255,180,0,0.7);
+  }
+  .result-sub { font-size: clamp(16px, 2.6vw, 26px); color: #cdd6ff; margin-top: 14px; }
+  .result-hint { margin-top: 40px; color: #889; font-size: 14px; }
+
+  /* ---- 操作説明 / ポーズ ---- */
+  #controls-help {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    display: flex; justify-content: space-between;
+    padding: 8px 16px; font-size: 11px; color: rgba(200,210,255,0.75);
+    background: linear-gradient(transparent, rgba(0,0,10,0.7));
+    pointer-events: none; text-shadow: 0 1px 2px #000;
+  }
+  #pause-overlay {
+    background: rgba(0,0,10,0.7); font-size: 28px; font-weight: 800;
+    flex-direction: column; gap: 16px;
+  }
+  #pause-overlay .small { font-size: 14px; color: #99a; }
+
+  #bgm-indicator {
+    position: absolute; top: 96px; left: 50%; transform: translateX(-50%);
+    font-size: 14px; font-weight: 700; color: #ffe14d;
+    background: rgba(0,0,10,0.7); padding: 5px 14px; border-radius: 14px;
+    border: 1px solid #38406e; pointer-events: none;
+    opacity: 0; transition: opacity 0.3s; text-shadow: 0 1px 2px #000;
+  }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "./lib/three.module.min.js"
+  }
+}
+</script>
+</head>
+<body>
+  <canvas id="game-canvas"></canvas>
+
+  <!-- タイトル -->
+  <div id="title-screen" class="overlay">
+    <div class="game-logo">RING OF FURY</div>
+    <div class="game-logo-sub">― 拳 王 決 定 戦 ―</div>
+    <div id="title-menu"></div>
+    <div class="title-hint">W/S または ↑/↓ で選択、Enter で決定　｜　B: BGM ON/OFF</div>
+  </div>
+
+  <!-- キャラセレクト -->
+  <div id="select-screen" class="overlay hidden">
+    <div class="select-title">CHARACTER SELECT</div>
+    <div id="char-grid"></div>
+    <div id="select-info">
+      <div id="select-info-p1" class="select-panel"></div>
+      <div id="select-info-p2" class="select-panel"></div>
+    </div>
+    <div class="select-hint">1P: WASD + F決定　／　2P: 矢印キー + K決定　／　Escape: タイトルへ</div>
+  </div>
+
+  <!-- 戦闘HUD -->
+  <div id="hud" class="hidden">
+    <div class="hud-row">
+      <div class="hud-side" id="p1-side">
+        <div class="hud-name" id="p1-name"></div>
+        <div class="health-outer"><div class="health-inner" id="p1-health"></div></div>
+        <div class="pips" id="p1-pips"></div>
+      </div>
+      <div id="timer-box"><span id="round-timer">60</span></div>
+      <div class="hud-side" id="p2-side">
+        <div class="hud-name" id="p2-name"></div>
+        <div class="health-outer"><div class="health-inner" id="p2-health"></div></div>
+        <div class="pips" id="p2-pips"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="center-message"></div>
+
+  <!-- リザルト -->
+  <div id="result-screen" class="overlay hidden">
+    <div id="result-text" style="text-align:center"></div>
+  </div>
+
+  <!-- ポーズ -->
+  <div id="pause-overlay" class="overlay hidden">
+    <div>PAUSE</div>
+    <div class="small">Escape: 再開　／　Q: タイトルへ戻る</div>
+  </div>
+
+  <!-- 操作説明 -->
+  <div id="controls-help" class="hidden">
+    <div>1P　移動: A/D　ジャンプ: W　しゃがみ: S　ステップ: Q/E　パンチ: F　キック: G　必殺技: H　投げ: T　ガード: Space　｜　コンボ: FFF / FG / GG　下段: S+F / S+G</div>
+    <div>2P　移動: ←/→　ジャンプ: ↑　しゃがみ: ↓　ステップ: ,/.　パンチ: K　キック: L　必殺技: O　投げ: I　ガード: M　｜　Escape: ポーズ　B: BGM</div>
+  </div>
+
+  <!-- BGM切り替えインジケータ -->
+  <div id="bgm-indicator"></div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
